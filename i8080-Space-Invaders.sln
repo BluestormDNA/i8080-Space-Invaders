@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2046
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "i8080-Space-Invaders", "i8080-Space-Invaders\i8080-Space-Invaders.csproj", "{47FCA403-6984-416B-BA98-7BAA1E8D5CF9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{47FCA403-6984-416B-BA98-7BAA1E8D5CF9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47FCA403-6984-416B-BA98-7BAA1E8D5CF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47FCA403-6984-416B-BA98-7BAA1E8D5CF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47FCA403-6984-416B-BA98-7BAA1E8D5CF9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E247D1CB-51D5-4554-B3B1-37273BCBBEAA}
+	EndGlobalSection
+EndGlobal
