@@ -1,5 +1,5 @@
-﻿using System;
-using System.Diagnostics;
+﻿using BlueStorm.intel8080CpuCore;
+using System;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -9,7 +9,7 @@ namespace i8080_Space_Invaders {
         Cpu cpu;
         Memory memory;
         Display display;
-        IObus iobus;
+        Bus iobus;
         PictureBox pictureBox;
 
         bool tock;
@@ -18,10 +18,10 @@ namespace i8080_Space_Invaders {
             this.pictureBox = pictureBox;
 
             memory = new Memory();
-            memory.loadRom();
-            //memory.loadTest();
+            memory.LoadRom();
+            //memory.LoadTest();
 
-            iobus = new IObus();
+            iobus = new Bus();
             cpu = new Cpu(memory, iobus);
 
             display = new Display(memory);

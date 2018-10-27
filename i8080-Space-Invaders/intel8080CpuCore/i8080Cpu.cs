@@ -1,11 +1,10 @@
 ﻿using System;
-using System.Diagnostics;
 
-namespace i8080_Space_Invaders {
+namespace BlueStorm.intel8080CpuCore {
     class Cpu {
 
         private byte[] memory;
-        private IObus iobus;
+        private i8080IObus iobus;
         private ushort PC;
         private ushort SP;
         private bool interruptPin;
@@ -54,8 +53,8 @@ namespace i8080_Space_Invaders {
         private byte Data8 { get { return memory[PC]; } }
         private ushort Data16 { get { return BitConverter.ToUInt16(memory, PC); } }
 
-        public Cpu(Memory memory, IObus iobus) {
-            this.memory = memory.mem;
+        public Cpu(i8080Memory memory, i8080IObus iobus) {
+            this.memory = memory.Mem;
             this.iobus = iobus;
             Flag0x2_1 = true; // always on flag
         }
@@ -68,39 +67,39 @@ namespace i8080_Space_Invaders {
             cycles += cyclesValue[opcode];
 
             switch (opcode) {
-                case 0x00: break;                               //NOP 	    4 	1 	------ 	00 	No Operation
-                case 0x01: BC = Data16; PC += 2; break;         //LD BC,NN 	10 	3 	01 XX XX Load (16-bit) 	dst=src 
-                case 0x02: memory[BC] = A; break;               //STAX B	1		(BC) <- A
-                case 0x03: BC += 1; break;                      //INX B	1		BC <- BC+1
-                case 0x04: B = INR(B); break;      //INR B	1	Z, S, P, AC	B <- B+1
-                case 0x05: B = DCR(B); break;      //DCR B 1	Z, S, P, AC	B <- B-1
-                case 0x06: B = Data8; PC += 1; break;           //MVI B, D8	2		B <- byte 2
+                case 0x00: break;                           //NOP 	    4 	1 	------ 	00 	No Operation
+                case 0x01: BC = Data16; PC += 2; break;     //LD BC,NN 	10 	3 	01 XX XX Load (16-bit) 	dst=src 
+                case 0x02: memory[BC] = A; break;           //STAX B	1		(BC) <- A
+                case 0x03: BC += 1; break;                  //INX B	1		BC <- BC+1
+                case 0x04: B = INR(B); break;               //INR B	1	Z, S, P, AC	B <- B+1
+                case 0x05: B = DCR(B); break;               //DCR B 1	Z, S, P, AC	B <- B-1
+                case 0x06: B = Data8; PC += 1; break;       //MVI B, D8	2		B <- byte 2
 
                 case 0x07: //RLC	1	CY	A = A << 1; bit 0 = prev bit 7; CY = prev bit 7
                     FlagC = ((A & 0x80) != 0);
                     A = (byte)((A << 1) | (A >> 7));
                     break;
 
-                case 0x08: break;                               //NOP
-                case 0x09: DAD(BC); break;                      //DAD B	1	CY	HL = HL + BC
-                case 0x0A: A = memory[BC]; break;               //LDAX B	1		A <- (BC)
-                case 0x0B: BC -= 1; break;                      //DCX B	1		BC = BC-1
-                case 0x0C: C = INR(C); break;      //INR C	1	Z, S, P, AC	C <- C+1
-                case 0x0D: C = DCR(C); break;      //DEC C 	4 	1 		Z, S, P, AC 0D Decrement (8-bit) 	s=s-1
-                case 0x0E: C = Data8; PC += 1; ; break;         //MVI C,D8	2		C <- byte 2
+                case 0x08: break;                            //NOP
+                case 0x09: DAD(BC); break;                   //DAD B	1	CY	HL = HL + BC
+                case 0x0A: A = memory[BC]; break;            //LDAX B	1		A <- (BC)
+                case 0x0B: BC -= 1; break;                   //DCX B	1		BC = BC-1
+                case 0x0C: C = INR(C); break;                //INR C	1	Z, S, P, AC	C <- C+1
+                case 0x0D: C = DCR(C); break;                //DEC C 	4 	1 		Z, S, P, AC 0D Decrement (8-bit) 	s=s-1
+                case 0x0E: C = Data8; PC += 1; ; break;      //MVI C,D8	2		C <- byte 2
 
                 case 0x0F: //RRC	1	CY	A = A >> 1; bit 7 = prev bit 0; CY = prev bit 0
                     FlagC = ((A & 0x1) != 0);
                     A = (byte)((A >> 1) | (A << 7));
                     break;
 
-                case 0x10: break;                              //NOP
-                case 0x11: DE = Data16; PC += 2; ; break;      //LXI D, D16 3       D < -byte 3, E < -byte 2
-                case 0x12: memory[DE] = A; break;              //STAX D	1		(DE) <- A
-                case 0x13: DE += 1; break;                     //INX D	1		DE <- DE + 1
-                case 0x14: D = INR(D); break;     //INR D	1	Z, S, P, AC	D <- D+1
-                case 0x15: D = DCR(D); break;     //DCR D	1	Z, S, P, AC	D <- D-1
-                case 0x16: D = Data8; PC += 1; ; break;        //MVI D, D8	2		D <- byte 2
+                case 0x10: break;                             //NOP
+                case 0x11: DE = Data16; PC += 2; ; break;     //LXI D, D16 3       D < -byte 3, E < -byte 2
+                case 0x12: memory[DE] = A; break;             //STAX D	1		(DE) <- A
+                case 0x13: DE += 1; break;                    //INX D	1		DE <- DE + 1
+                case 0x14: D = INR(D); break;                 //INR D	1	Z, S, P, AC	D <- D+1
+                case 0x15: D = DCR(D); break;                 //DCR D	1	Z, S, P, AC	D <- D-1
+                case 0x16: D = Data8; PC += 1; ; break;       //MVI D, D8	2		D <- byte 2
 
                 case 0x17://RAL	1	CY	A = A << 1; bit 0 = prev CY; CY = prev bit 7
                     bool prevC = FlagC;
@@ -112,8 +111,8 @@ namespace i8080_Space_Invaders {
                 case 0x19: DAD(DE); break;                     //DAD D	1	CY	HL = HL + DE
                 case 0x1A: A = memory[DE]; break;              //LDAX D	1		A <- (DE)
                 case 0x1B: DE -= 1; break;                     //DCX D	1		DE = DE-1
-                case 0x1C: E = INR(E); break;     //INR E	1	Z, S, P, AC	E <- E+1
-                case 0x1D: E = DCR(E); break;     //DCR E	1	Z, S, P, AC	E <- E-1
+                case 0x1C: E = INR(E); break;                  //INR E	1	Z, S, P, AC	E <- E+1
+                case 0x1D: E = DCR(E); break;                  //DCR E	1	Z, S, P, AC	E <- E-1
                 case 0x1E: E = Data8; PC += 1; ; break;        //MVI E,D8	2		E <- byte 2
 
                 case 0x1F://RAR	1	CY	A = A >> 1; bit 7 = prev bit 7; CY = prev bit 0
@@ -126,8 +125,8 @@ namespace i8080_Space_Invaders {
                 case 0x21: HL = Data16; PC += 2; ; break;      //LXI H,D16	3		H <- byte 3, L <- byte 2
                 case 0x22: memory[Data16] = L; memory[Data16 + 1] = H; PC += 2; ; break; //SHLD adr	3		(adr) <-L; (adr+1)<-H
                 case 0x23: HL += 1; break;                     //INX H	1		HL <- HL + 1
-                case 0x24: H = INR(H); break;     //INR H	1	Z, S, P, AC	H <- H+1
-                case 0x25: H = DCR(H); break;     //DCR H	1	Z, S, P, AC	H <- H-1
+                case 0x24: H = INR(H); break;                  //INR H	1	Z, S, P, AC	H <- H+1
+                case 0x25: H = DCR(H); break;                  //DCR H	1	Z, S, P, AC	H <- H-1
                 case 0x26: H = Data8; PC += 1; ; break;        //LD H,N 	7 	2 	26 XX Load (8-bit) 	dst=src 
 
                 case 0x27: break; //DAA	1		special //Skiping (PENDING IMPLEMENTATION)
@@ -136,8 +135,8 @@ namespace i8080_Space_Invaders {
                 case 0x29: DAD(HL); break;                      //DAD H	1	CY	HL = HL + HL
                 case 0x2A: L = memory[Data16]; H = memory[Data16 + 1]; PC += 2; ; break; //LHLD adr	3		L <- (adr); H<-(adr+1)
                 case 0x2B: HL -= 1; break;                      //DCX H	1		HL = HL-1
-                case 0x2C: L = INR(L); break;      //INR L	1	Z, S, P, AC	L <- L+1
-                case 0x2D: L = DCR(L); break;      //DCR L	1	Z, S, P, AC	L <- L-1
+                case 0x2C: L = INR(L); break;                   //INR L	1	Z, S, P, AC	L <- L+1
+                case 0x2D: L = DCR(L); break;                   //DCR L	1	Z, S, P, AC	L <- L-1
                 case 0x2E: L = Data8; PC += 1; ; break;         //MVI L, D8	2		L <- byte 2
 
                 case 0x2F: A = (byte)~A; break;                 //CMA	1		A <- !A
@@ -146,8 +145,8 @@ namespace i8080_Space_Invaders {
                 case 0x31: SP = Data16; PC += 2; ; break;       //LXI SP, D16	3		SP.hi <- byte 3, SP.lo <- byte 2
                 case 0x32: memory[Data16] = A; PC += 2; break;  //STA adr	3		(adr) <- A
                 case 0x33: SP += 1; break;                      //INX SP	1		SP = SP + 1
-                case 0x34: M = INR(M); break;      //INR M	1	Z, S, P, AC	(HL) <- (HL)+1
-                case 0x35: M = DCR(M); break;      //DCR M	1	Z, S, P, AC	(HL) <- (HL)-1
+                case 0x34: M = INR(M); break;                   //INR M	1	Z, S, P, AC	(HL) <- (HL)+1
+                case 0x35: M = DCR(M); break;                   //DCR M	1	Z, S, P, AC	(HL) <- (HL)-1
                 case 0x36: M = Data8; PC += 1; ; break;         //MVI M,D8	2		(HL) <- byte 2
 
                 case 0x37: FlagC = true; break;                 //STC	1	CY	CY = 1
@@ -156,8 +155,8 @@ namespace i8080_Space_Invaders {
                 case 0x39: DAD(SP); break;                      //DAD SP	1	CY	HL = HL + SP
                 case 0x3A: A = memory[Data16]; PC += 2; break;  //LDA adr	3		A <- (adr)
                 case 0x3B: SP -= 1; break;                      //DCX SP	1		SP = SP-1
-                case 0x3C: A = INR(A); break;      //INR A	1	Z, S, P, AC	A <- A+1
-                case 0x3D: A = DCR(A); break;      //DCR A	1	Z, S, P, AC	A <- A-1
+                case 0x3C: A = INR(A); break;                   //INR A	1	Z, S, P, AC	A <- A+1
+                case 0x3D: A = DCR(A); break;                   //DCR A	1	Z, S, P, AC	A <- A-1
                 case 0x3E: A = Data8; PC += 1; ; break;         //MVI A,D8	2		A <- byte 2
 
                 case 0x3F: FlagC = !FlagC; break;               //CMC	1	CY	CY=!CY
@@ -323,8 +322,8 @@ namespace i8080_Space_Invaders {
                 case 0xCC: CALL(FlagZ); break;             //CZ adr	3		if Z, CALL adr
 
                 case 0xCD:                                 //CALL adr	3		(SP-1)<-PC.hi;(SP-2)<-PC.lo;PC=adrç
-
-                    if (5 == Data16) {
+                    /*
+                    if (5 == Data16) {  //DEBUG REMANENTS FOR CPU TESTS
                         if (C == 9) {
                             int i = 0;  //skip the prefix bytes     era 3
                             while ((char)memory[DE + i] != '$')
@@ -340,80 +339,74 @@ namespace i8080_Space_Invaders {
                     } else if (0 == Data16) {
                         Debug.WriteLine("KILL MODE ON");
                     } else {
-
+                    */
                         CALL(true);
-
-                    }
-
-                    //SP.ToString("x2") + " " + (SP + 1).ToString("x2"));
+                    //}
                     break;
 
                 case 0xCE: ADC(Data8); PC += 1; ; break; //ACI D8	2	Z, S, P, CY, AC	A <- A + data + CY
 
-                case 0xCF: RST(0x8); break;   //RST 1	1		CALL $8
+                case 0xCF: RST(0x8); break;         //RST 1	1		CALL $8
 
-                case 0xD0: RETURN(!FlagC); break;  //RNC	1		if NCY, RET
-                case 0xD1: DE = POP(); break;  //POP DE 	10 	1 	D1 Pop 	qq=(SP)+ 
-                case 0xD2: JUMP(!FlagC); break;    //JP NC,$NN 	10/1 	3 	D2 XX XX If Carry = 0
+                case 0xD0: RETURN(!FlagC); break;   //RNC	1		if NCY, RET
+                case 0xD1: DE = POP(); break;       //POP DE 	10 	1 	D1 Pop 	qq=(SP)+ 
+                case 0xD2: JUMP(!FlagC); break;     //JP NC,$NN 	10/1 	3 	D2 XX XX If Carry = 0
 
-                case 0xD3: iobus.write(Data8, A); PC += 1; break;              //OUT (N),A 	11 	2 	------ 	D3 XX 	Output 	(n)=A //TODO OUTPUT
+                case 0xD3: iobus.Write(Data8, A); PC += 1; break;              //OUT (N),A 	11 	2 	------ 	D3 XX 	Output 	(n)=A //TODO OUTPUT
 
-                case 0xD4: CALL(!FlagC); break;    //CNC adr	3		if NCY, CALL adr
+                case 0xD4: CALL(!FlagC); break;     //CNC adr	3		if NCY, CALL adr
 
-                case 0xD5: PUSH(DE); break;     //PUSH D	1		(sp-2)<-E; (sp-1)<-D; sp <- sp - 2
+                case 0xD5: PUSH(DE); break;         //PUSH D	1		(sp-2)<-E; (sp-1)<-D; sp <- sp - 2
                 case 0xD6: SUB(Data8); PC += 1; ; break; //SUI D8	2	Z, S, P, CY, AC	A <- A - data
 
-                case 0xD7: RST(0x10); break;  //RST 2	1		CALL $10
+                case 0xD7: RST(0x10); break;        //RST 2	1		CALL $10
 
-                case 0xD8: RETURN(FlagC); break;   // RC	1		if CY, RET
-                case 0xD9: RETURN(true); break;  // RET	1		PC.lo <- (sp); PC.hi<-(sp+1); SP <- SP+2 // Alt Instruction C9 Clone
-                case 0xDA: JUMP(FlagC); break;     // JC adr	3		if CY, PC<-adr
+                case 0xD8: RETURN(FlagC); break;    // RC	1		if CY, RET
+                case 0xD9: RETURN(true); break;     // RET	1		PC.lo <- (sp); PC.hi<-(sp+1); SP <- SP+2 // Alt Instruction C9 Clone
+                case 0xDA: JUMP(FlagC); break;      // JC adr	3		if CY, PC<-adr
 
-                case 0xDB: A = iobus.read(Data8); PC += 1; break; //IN A,(N) 	11 	2 	------ 	DB XX 	Input 	A=(n)
+                case 0xDB: A = iobus.Read(Data8); PC += 1; break; //IN A,(N) 	11 	2 	------ 	DB XX 	Input 	A=(n)
 
-                case 0xDC: CALL(FlagC); break; //	CC adr	3		if CY, CALL adr
-                case 0xDD: CALL(true); break; // Alt instruction CD Clone
+                case 0xDC: CALL(FlagC); break;      //	CC adr	3		if CY, CALL adr
+                case 0xDD: CALL(true); break;       // Alt instruction CD Clone
                 case 0xDE: SBB(Data8); PC += 1; ; break; // SBI D8	2	Z, S, P, CY, AC	A <- A - data - CY
 
-                case 0xDF: RST(0x18); ; break; // RST 3	1		CALL $18
+                case 0xDF: RST(0x18); ; break;      // RST 3	1		CALL $18
 
-                case 0xE0: RETURN(!FlagP); break; //	RPO	1		if PO, RET
-                case 0xE1: HL = POP(); break; //POP H	1		L <- (sp); H <- (sp+1); sp <- sp+2
-                case 0xE2: JUMP(!FlagP); break; //JPO adr	3		if PO, PC <- adr
-                case 0xE3: //XTHL   1       L <-> (SP); H <-> (SP + 1)
-                    //Console.WriteLine(memory[SP] + " " + memory[SP + 1] + "adress" + SP);
+                case 0xE0: RETURN(!FlagP); break;   //	RPO	1		if PO, RET
+                case 0xE1: HL = POP(); break;       //POP H	1		L <- (sp); H <- (sp+1); sp <- sp+2
+                case 0xE2: JUMP(!FlagP); break;     //JPO adr	3		if PO, PC <- adr
+                case 0xE3:                          //XTHL   1       L <-> (SP); H <-> (SP + 1)
                     L ^= memory[SP]; memory[SP] ^= L; L ^= memory[SP];
                     H ^= memory[SP + 1]; memory[SP + 1] ^= H; H ^= memory[SP + 1];
-
                     break;
-                case 0xE4: CALL(!FlagP); break; //CPO adr	3		if PO, CALL adr
-                case 0xE5: PUSH(HL); break; // PUSH H	1		(sp-2)<-L; (sp-1)<-H; sp <- sp - 2
+                case 0xE4: CALL(!FlagP); break;     //CPO adr	3		if PO, CALL adr
+                case 0xE5: PUSH(HL); break;         // PUSH H	1		(sp-2)<-L; (sp-1)<-H; sp <- sp - 2
                 case 0xE6: ANA(Data8); PC += 1; ; break; //ANI D8	2	Z, S, P, CY, AC	A <- A & data
-                case 0xE7: RST(0x20); break; //RST 4	1		CALL $20
-                case 0xE8: RETURN(FlagP); break; //RPE	1		if PE, RET
-                case 0xE9: PC = HL; break;  //PCHL	1		PC.hi <- H; PC.lo <- L
-                case 0xEA: JUMP(FlagP); break; //JPE adr	3		if PE, PC <- adr
+                case 0xE7: RST(0x20); break;        //RST 4	1		CALL $20
+                case 0xE8: RETURN(FlagP); break;    //RPE	1		if PE, RET
+                case 0xE9: PC = HL; break;          //PCHL	1		PC.hi <- H; PC.lo <- L
+                case 0xEA: JUMP(FlagP); break;      //JPE adr	3		if PE, PC <- adr
                 case 0xEB: HL ^= DE; DE ^= HL; HL ^= DE; break; //XCHG	1		H <-> D; L <-> E
-                case 0xEC: CALL(FlagP); break; //CPE adr	3		if PE, CALL adr
-                case 0xED: CALL(true); break; // Alt instruction CD Clone
+                case 0xEC: CALL(FlagP); break;      //CPE adr	3		if PE, CALL adr
+                case 0xED: CALL(true); break;       // Alt instruction CD Clone
                 case 0xEE: XRA(Data8); PC += 1; ; break; //XRI D8	2	Z, S, P, CY, AC	A <- A ^ data
 
-                case 0xEF: RST(0x28); break; //RST 5	1		CALL $28
-
-                case 0xF0: RETURN(!FlagS); break; //RP	1		if P, RET
-                case 0xF1: AF = POP(); break; // POP PSW	1		flags <- (sp); A <- (sp+1); sp <- sp+2
-                case 0xF2: JUMP(!FlagS); break; //	JP adr	3		if P=1 PC <- adr
+                case 0xEF: RST(0x28); break;        //RST 5	1		CALL $28
+                case 0xF0: RETURN(!FlagS); break;   //RP	1		if P, RET
+                case 0xF1: AF = POP(); break;       // POP PSW	1		flags <- (sp); A <- (sp+1); sp <- sp+2
+                case 0xF2: JUMP(!FlagS); break;     //	JP adr	3		if P=1 PC <- adr
                 case 0xF3: interruptPin = false; break; //DI	1       Disable Interrupts
-                case 0xF4: CALL(!FlagS); break; //CP adr	3		if P, PC <- adr
-                case 0xF5: PUSH(AF); break; //PUSH AF 	11 	1 	------ 	F5 PUSH 	(SP)=qq
+                case 0xF4: CALL(!FlagS); break;     //CP adr	3		if P, PC <- adr
+                case 0xF5: PUSH(AF); break;         //PUSH AF 	11 	1 	------ 	F5 PUSH 	(SP)=qq
                 case 0xF6: ORA(Data8); PC += 1; ; break; //ORI D8	2	Z, S, P, CY, AC	A <- A | data
-                case 0xF7: RST(0x30); break; //RST 6	1		CALL $30
-                case 0xF8: RETURN(FlagS); break; //RM	1		if M, RET
-                case 0xF9: SP = HL; break; //SPHL	1		SP=HL
-                case 0xFA: JUMP(FlagS); break; //JM adr	3		if M, PC <- adr
+                case 0xF7: RST(0x30); break;        //RST 6	1		CALL $30
+                case 0xF8: RETURN(FlagS); break;    //RM	1		if M, RET
+                case 0xF9: SP = HL; break;          //SPHL	1		SP=HL
+                case 0xFA: JUMP(FlagS); break;      //JM adr	3		if M, PC <- adr
                 case 0xFB: interruptPin = true; break; //EI 	4 	1 	Enable Interrupts 	
-                case 0xFC: CALL(FlagS); break; // CM adr	3		if M, CALL adr
-                case 0xFD: CALL(true); break; // Alt instruction CD Clone
+                case 0xFC: CALL(FlagS); break;      // CM adr	3		if M, CALL adr
+                case 0xFD: CALL(true); break;       // Alt instruction CD Clone
                 case 0xFE: CMP(Data8); PC += 1; ; break; //CPI D8	2	Z, S, P, CY, AC	A - data
 
                 case 0xFF: RST(0x38); break; //RST 7	1		CALL $38

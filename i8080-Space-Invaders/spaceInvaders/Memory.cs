@@ -1,22 +1,24 @@
-﻿using System;
+﻿using BlueStorm.intel8080CpuCore;
+using System;
 using System.IO;
 
 namespace i8080_Space_Invaders {
 
-    class Memory {
+    class Memory : i8080Memory{
 
-        public byte[] mem = new byte[0x8000];
-        //public byte[] mem = new byte[0x16000];
+        private byte[] mem = new byte[0x8000];
         private string[] romFiles = { "invaders.h", "invaders.g", "invaders.f", "invaders.e" };
 
-        public void loadRom() {
+        public byte[] Mem { get => mem; set => mem = value; }
+
+        public void LoadRom() {
             for (int i = 0; i < romFiles.Length; i++) {
                 byte[] rom = File.ReadAllBytes(romFiles[i]);
                 Array.Copy(rom, 0, mem, 2048 * i, rom.Length);
             }
         }
 
-        public void loadTest() {
+        public void LoadTest() {
             byte[] rom = File.ReadAllBytes("8080EX1.COM");
             Array.Copy(rom, 0, mem, 0x100, rom.Length);
             mem[5] = 0xC9;
@@ -31,7 +33,7 @@ namespace i8080_Space_Invaders {
             //mem[0x59e] = 0x05;
         }
 
-        public void dumpMemory() {
+        public void DumpMemory() {
 
             string path = "memHexDump.txt";
             if (!File.Exists(path)) {

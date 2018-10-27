@@ -17,7 +17,7 @@ namespace i8080_Space_Invaders {
         //public DirectBitmap Bmp;
 
         public Display(Memory memory) {
-            this.mem = memory.mem;
+            this.mem = memory.Mem;
             //Bmp = new DirectBitmap(256, 224);
         }
 
