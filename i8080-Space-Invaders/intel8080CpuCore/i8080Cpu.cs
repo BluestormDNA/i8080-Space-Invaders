@@ -35,7 +35,7 @@ namespace BlueStorm.intel8080CpuCore {
 
         private byte A, B, C, D, E, F, H, L;
 
-        private ushort AF { get { return combineRegisters(A, F); } set { A = (byte)(value >> 8); F = (byte)value; } }
+        private ushort AF { get { return combineRegisters(A, F); } set { A = (byte)(value >> 8); F = (byte)(value & 0xD7 | 0x2); } }
         private ushort BC { get { return combineRegisters(B, C); } set { B = (byte)(value >> 8); C = (byte)value; } }
         private ushort DE { get { return combineRegisters(D, E); } set { D = (byte)(value >> 8); E = (byte)value; } }
         private ushort HL { get { return combineRegisters(H, L); } set { H = (byte)(value >> 8); L = (byte)value; } }
@@ -129,7 +129,25 @@ namespace BlueStorm.intel8080CpuCore {
                 case 0x25: H = DCR(H); break;                  //DCR H	1	Z, S, P, AC	H <- H-1
                 case 0x26: H = Data8; PC += 1; ; break;        //LD H,N 	7 	2 	26 XX Load (8-bit) 	dst=src 
 
-                case 0x27: break; //DAA	1		special //Skiping (PENDING IMPLEMENTATION)
+                case 0x27: //DAA	1		special
+                    int daa = A;
+                    if ((daa & 0x0F) > 0x9 || FlagAC) {
+                        FlagAC = (((daa & 0x0F) + 0x06) & 0xF0) != 0;
+                        daa += 0x06;
+                        if ((daa & 0xFF00) != 0) {
+                            FlagC = true;
+                        }
+                    } 
+                    
+                    if ((daa & 0xF0) > 0x90 || FlagC) {
+                        daa += 0x60;
+                        if ((daa & 0xFF00) != 0) {
+                            FlagC = true;
+                        }
+                    }
+                    SetFlagsSZP(daa);
+                    A = (byte)daa;
+                    break;
 
                 case 0x28: break;                               //NOP
                 case 0x29: DAD(HL); break;                      //DAD H	1	CY	HL = HL + HL
@@ -322,7 +340,7 @@ namespace BlueStorm.intel8080CpuCore {
                 case 0xCC: CALL(FlagZ); break;             //CZ adr	3		if Z, CALL adr
 
                 case 0xCD:                                 //CALL adr	3		(SP-1)<-PC.hi;(SP-2)<-PC.lo;PC=adrç
-                    /*
+
                     if (5 == Data16) {  //DEBUG REMANENTS FOR CPU TESTS
                         if (C == 9) {
                             int i = 0;  //skip the prefix bytes     era 3
@@ -337,11 +355,11 @@ namespace BlueStorm.intel8080CpuCore {
                         }
                         PC += 2; ; // OJO
                     } else if (0 == Data16) {
-                        Debug.WriteLine("KILL MODE ON");
+                        // Exit
                     } else {
-                    */
+
                         CALL(true);
-                    //}
+                    }
                     break;
 
                 case 0xCE: ADC(Data8); PC += 1; ; break; //ACI D8	2	Z, S, P, CY, AC	A <- A + data + CY
@@ -416,21 +434,21 @@ namespace BlueStorm.intel8080CpuCore {
 
         private byte INR(byte b) {
             int result = b + 1;
-            FlagAC = (((b & 0xF) + 1) & 0x10) == 1;// pending refactor AC calc
+            SetFlagAC(b, 1);
             SetFlagsSZP(result);
             return (byte)result;
         }
 
         private byte DCR(byte b) {
             int result = b - 1;
-            FlagAC = (((b & 0xF) - 1) & 0x10) == 1;// pending refactor AC calc
+            SetFlagACSub(b, 1);
             SetFlagsSZP(result);
             return (byte)result;
         }
 
         private void ADD(byte b) {
             int result = A + b;
-            FlagAC = (((A & 0xF) + (b & 0xF)) & 0x10) == 1; // pending refactor AC calc
+            SetFlagAC(A, b);
             SetFlagC(result);
             SetFlagsSZP(result);
             A = (byte)result;
@@ -439,7 +457,8 @@ namespace BlueStorm.intel8080CpuCore {
         private void ADC(byte b) {
             int carry = FlagC ? 1 : 0;
             int result = A + b + carry;
-            FlagAC = (((A & 0xF) + (b & 0xF) + carry) & 0x10) == 1; // pending refactor AC calc
+            if (FlagC) SetFlagACCarry(A, b);
+            else SetFlagAC(A, b);
             SetFlagC(result);
             SetFlagsSZP(result);
             A = (byte)result;
@@ -447,7 +466,7 @@ namespace BlueStorm.intel8080CpuCore {
 
         private void SUB(byte b) {
             int result = A - b;
-            FlagAC = (((A & 0xF) - (b & 0xF)) & 0x10) == 1; // pending refactor AC calc
+            SetFlagACSub(A, b);
             SetFlagC(result);
             SetFlagsSZP(result);
             A = (byte)result;
@@ -456,7 +475,8 @@ namespace BlueStorm.intel8080CpuCore {
         private void SBB(byte b) {
             int carry = FlagC ? 1 : 0;
             int result = A - b - carry;
-            FlagAC = (((A & 0xF) - (b & 0xF) - carry) & 0x10) == 1; // pending refactor AC calc
+            if (FlagC) SetFlagACSubCarry(A, b);
+            else SetFlagACSub(A, b);
             SetFlagC(result);
             SetFlagsSZP(result);
             A = (byte)result;
@@ -464,6 +484,7 @@ namespace BlueStorm.intel8080CpuCore {
 
         private void ANA(byte b) {
             byte result = (byte)(A & b);
+            FlagAC = ((A | b) & 0x08) != 0; // special case on 8080 documented by intel p1-12
             FlagC = false;
             SetFlagsSZP(result);
             A = result;
@@ -471,6 +492,7 @@ namespace BlueStorm.intel8080CpuCore {
 
         private void XRA(byte b) {
             byte result = (byte)(A ^ b);
+            FlagAC = false;
             FlagC = false;
             SetFlagsSZP(result);
             A = result;
@@ -478,6 +500,7 @@ namespace BlueStorm.intel8080CpuCore {
 
         private void ORA(byte b) {
             byte result = (byte)(A | b);
+            FlagAC = false;
             FlagC = false;
             SetFlagsSZP(result);
             A = result;
@@ -485,7 +508,7 @@ namespace BlueStorm.intel8080CpuCore {
 
         private void CMP(byte b) {
             int result = A - b;
-            FlagAC = (((A & 0xF) - (b & 0xF)) & 0x10) == 1; // pending refactor AC calc
+            SetFlagACSub(A, b);
             SetFlagC(result);
             SetFlagsSZP(result);
         }
@@ -547,9 +570,20 @@ namespace BlueStorm.intel8080CpuCore {
             FlagP = parity(b);
         }
 
-        private void SetFlagAC(int i) {
-            //FlagA Pending to be implemented (only opcode 0x27 DAA needs it)
-            //pending refactor
+        private void SetFlagAC(byte b1, byte b2) {
+            FlagAC = ((b1 & 0xF) + (b2 & 0xF)) > 0xF;
+        }
+
+        private void SetFlagACCarry(byte b1, byte b2) {
+            FlagAC = ((b1 & 0xF) + (b2 & 0xF)) >= 0xF;
+        }
+
+        private void SetFlagACSub(byte b1, byte b2) {
+            FlagAC = (b2 & 0xF) <= (b1 & 0xF);
+        }
+
+        private void SetFlagACSubCarry(byte b1, byte b2) {
+            FlagAC = (b2 & 0xF) < (b1 & 0xF);
         }
 
         private bool parity(byte b) {
