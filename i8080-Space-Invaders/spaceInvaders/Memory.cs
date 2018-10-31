@@ -7,6 +7,7 @@ namespace i8080_Space_Invaders {
     class Memory : i8080Memory{
 
         private byte[] mem = new byte[0x8000];
+        //private byte[] mem = new byte[0x16000];
         private string[] romFiles = { "invaders.h", "invaders.g", "invaders.f", "invaders.e" };
 
         public byte[] Mem { get => mem; set => mem = value; }
@@ -19,22 +20,16 @@ namespace i8080_Space_Invaders {
         }
 
         public void LoadTest() {
-            byte[] rom = File.ReadAllBytes("8080EX1.COM");
+            byte[] rom = File.ReadAllBytes("cpudiag.bin");
             Array.Copy(rom, 0, mem, 0x100, rom.Length);
             mem[5] = 0xC9;
             //Fix the stack pointer from 0x6ad to 0x7ad    
             // this 0x06 byte 112 in the code, which is    
             // byte 112 + 0x100 = 368 in memory    
             //mem[368] = 0x7;
-
-            //Skip DAA test    
-            //mem[0x59c] = 0xc3; //JMP    
-            //mem[0x59d] = 0xc2;
-            //mem[0x59e] = 0x05;
         }
 
         public void DumpMemory() {
-
             string path = "memHexDump.txt";
             if (!File.Exists(path)) {
                 // Create a file to write to.
