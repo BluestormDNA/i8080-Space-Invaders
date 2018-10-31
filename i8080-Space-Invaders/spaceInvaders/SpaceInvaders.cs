@@ -19,7 +19,6 @@ namespace i8080_Space_Invaders {
 
             memory = new Memory();
             memory.LoadRom();
-            //memory.LoadTest();
 
             iobus = new Bus();
             cpu = new Cpu(memory, iobus);
@@ -73,5 +72,46 @@ namespace i8080_Space_Invaders {
                 pictureBox.Refresh();
             }
         }
+
+        public void handleInput(byte b , Boolean pushed) {
+            if (pushed) {
+                switch (b) {
+                    case 0x1:
+                        iobus.input |= 0x1;
+                        break;
+                    case 0x4:
+                        iobus.input |= 0x4;
+                        break;
+                    case 0x10:
+                        iobus.input |= 0x10;
+                        break;
+                    case 0x20:
+                        iobus.input |= 0x20;
+                        break;
+                    case 0x40:
+                        iobus.input |= 0x40;
+                        break;
+                }
+            } else {
+                switch (b) {
+                    case 0x1:
+                        iobus.input &= 0xFE;
+                        break;
+                    case 0x4:
+                        iobus.input &= 0xFB;
+                        break;
+                    case 0x10:
+                        iobus.input &= 0xEF;
+                        break;
+                    case 0x20:
+                        iobus.input &= 0xDF;
+                        break;
+                    case 0x40:
+                        iobus.input &= 0xBF;
+                        break;
+                }
+            }
+        }
+
     }
 }

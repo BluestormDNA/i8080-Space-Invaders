@@ -48,6 +48,8 @@
             this.Name = "Form";
             this.Text = "Space Invaders";
             this.Load += new System.EventHandler(this.Form_Load);
+            this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Key_Down);
+            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.Key_Up);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox)).EndInit();
             this.ResumeLayout(false);
 
